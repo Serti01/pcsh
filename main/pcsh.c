@@ -33,6 +33,17 @@ int main(int argc, char **argv) {
 
     // Check input in this order: builtins > path
 
+    char *args[256] = {};
+    int argsc = 0;
+    for (int i = 0, j = 0, c = 0; i < strlen(input); i++, c = input[i])
+      if (c == ' ')
+        j++, argsc++;
+      else
+        args[j][i] = c;
+
+    for (int i = 0; i < argsc; i++)
+      printf("%i %s\n", i, args[i]);
+
     return 0;
   }
 
