@@ -1,6 +1,8 @@
 #!/usr/bin/sh
 
-mkdir bin
+if ! test -e bin;then 
+    mkdir bin
+fi
 
 # compile to objects
 gcc -c -fPIC main/pcsh.c            -o bin/pcsh.o
@@ -18,4 +20,6 @@ rm *.o
 
 cd ..
 
-LD_LIBRARY_PATH=~/Documents/dev/pcsh/bin/ ./bin/pcsh
+if [ "$1" == "run" ]; then
+    LD_LIBRARY_PATH=~/Documents/dev/pcsh/bin/ ./bin/pcsh
+fi

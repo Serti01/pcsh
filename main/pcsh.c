@@ -54,16 +54,15 @@ int main(int argc, char **argv) {
     printf("$ %s\n", args[0]);
 
     // execute command
-    // strmcp is fucking cursed
-    // if () {
-    //   if (args[1] != NULL) {
-    //     printf("cd %s\n", args[1]);
-    //     if (!cd(args[1])) {
-    //       perror("cd: ");
-    //     }
-    //   }
-    // }
-    return 0;
+    // strcmp is fucking cursed i hate it i hate it i hate it fuck you strcmp
+    if (cmpstr(args[0], "cd")) {
+      if (args[1] != NULL) {
+        printf("%i", chdir(args[1]));
+        if (chdir(args[1]) != -1)
+          perror("cd");
+      }
+    } else if (cmpstr(args[0], "exit"))
+      break;
   }
 
   return 0;
