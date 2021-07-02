@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 // TODO: add all builtins
-#include "../builtins/builtins.h"
+#include "../lib/pcsh.h"
 
 #define INPUT_LIMIT 2096
 
@@ -54,15 +54,15 @@ int main(int argc, char **argv) {
     printf("$ %s\n", args[0]);
 
     // execute command
-    printf("%i", strcmp(args[0], "cd"));
-    if (strcmp(args[0], "cd") != 0) {
-      if (args[1] != NULL) {
-        printf("cd %s\n", args[1]);
-        if (!cd(args[1])) {
-          perror("cd: ");
-        }
-      }
-    }
+    // strmcp is fucking cursed
+    // if () {
+    //   if (args[1] != NULL) {
+    //     printf("cd %s\n", args[1]);
+    //     if (!cd(args[1])) {
+    //       perror("cd: ");
+    //     }
+    //   }
+    // }
     return 0;
   }
 
