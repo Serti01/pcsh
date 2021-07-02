@@ -31,6 +31,9 @@ int main(int argc, char **argv) {
     printf("%s@%s %s> ", s_username, s_hostname, s_pwd);
     fgets(input, INPUT_LIMIT, stdin);
 
+    if (input == NULL)
+      continue;
+
     // 100 args each with 1024 characters
     char **args = malloc((1024 * sizeof(char)) * 100);
     for (int i = 0; i < 100; i++)
@@ -47,6 +50,20 @@ int main(int argc, char **argv) {
         j++, argsc++;
       }
     }
+
+    printf("$ %s\n", args[0]);
+
+    // execute command
+    printf("%i", strcmp(args[0], "cd"));
+    if (strcmp(args[0], "cd") != 0) {
+      if (args[1] != NULL) {
+        printf("cd %s\n", args[1]);
+        if (!cd(args[1])) {
+          perror("cd: ");
+        }
+      }
+    }
+    return 0;
   }
 
   return 0;
