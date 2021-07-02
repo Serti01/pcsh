@@ -11,12 +11,14 @@ int cd(char *path) {
 
   stat(path, buf);
 
+  // If path is NOT dir
   if (!(buf->st_mode & S_IFDIR)) {
     errno = ENOTDIR;
+    free(buf);
     return 1;
-  }
+  } else
+    chdir(path);
 
   free(buf);
-  chdir(path);
   return 0;
 }
