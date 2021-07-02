@@ -14,6 +14,8 @@ gcc -shared lib.o -o libpcsh.so
 # link
 gcc  pcsh.o -L./ -lpcsh -o pcsh
 
+rm *.o
+
 cd ..
 
 LD_LIBRARY_PATH=~/Documents/dev/pcsh/bin/ ./bin/pcsh
