@@ -1,13 +1,14 @@
+#include "../lib/pcsh.h"
 #include <errno.h>
 #include <memory.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-// TODO: add all builtins
-#include "../lib/pcsh.h"
 
-#define INPUT_LIMIT 2096
+#define INPUT_LIMIT (8 << 8) // 2048
+#define LIMIT_BIG (8 << 7)   // 1024
+#define LIMIT_SMALL (8 << 4) // 128
 
 int main(int argc, char **argv) {
   // Ignore SIGINT
@@ -16,33 +17,34 @@ int main(int argc, char **argv) {
   char *input = malloc(INPUT_LIMIT * sizeof(char));
 
   // Read the env
-  char *s_username = malloc(128 * sizeof(size_t));
-  char *s_hostname = malloc(128 * sizeof(size_t));
-  char *s_pwd = malloc(1024 * sizeof(size_t));
+  char *s_username = malloc(LIMIT_SMALL * sizeof(size_t));
+  char *s_hostname = malloc(LIMIT_SMALL * sizeof(size_t));
+  char *s_pwd = malloc(LIMIT_BIG * sizeof(size_t));
   __uid_t s_uid = getuid();
-  getlogin_r(s_username, 128);
-  gethostname(s_hostname, 128);
-  getcwd(s_pwd, 1024);
+  getlogin_r(s_username, LIMIT_SMALL);
+  gethostname(s_hostname, LIMIT_SMALL);
+  getcwd(s_pwd, LIMIT_BIG);
 
-  // TODO: change this from an infinite condition
   while (1) {
     // TODO: add prompt/theme support
-    getcwd(s_pwd, 1024);
-    printf("%s@%s %s> ", s_username, s_hostname, s_pwd);
+    // TODO: support for rollback, ctrl+l, etc. (needs to get indiviual chars
+    // instead of deliming at '\n')
+    getcwd(s_pwd, LIMIT_BIG);
+    printf("\r%s@%s %s> ", s_username, s_hostname, s_pwd);
     fgets(input, INPUT_LIMIT, stdin);
 
     if (input == NULL)
       continue;
 
-    // 100 args each with 1024 characters
-    char **args = malloc((1024 * sizeof(char)) * 100);
+    // 100 args each with 8<<7 (1024) characters
+    char **args = malloc((LIMIT_BIG * sizeof(char)) * 100);
     for (int i = 0; i < 100; i++)
-      args[i] = malloc(1024 * sizeof(char));
+      args[i] = malloc(LIMIT_BIG * sizeof(char));
     int argsc = 0; // args count
 
     // seperate args with delim ' ' and '\x00'
     for (int i = 0, j = 0, k = 0; i <= strlen(input); i++, k++) {
-      if (input[i] != ' ' && input[i] != '\x00') {
+      if (input[i] != ' ' && input[i] != '\x00' && input[i] != 10) {
         args[j][k] = input[i];
       } else {
         args[j][i] = '\x00';
@@ -51,18 +53,29 @@ int main(int argc, char **argv) {
       }
     }
 
-    printf("$ %s\n", args[0]);
-
     // execute command
-    // strcmp is fucking cursed i hate it i hate it i hate it fuck you strcmp
+    // TODO: aliases
     if (cmpstr(args[0], "cd")) {
       if (args[1] != NULL) {
-        printf("%i", chdir(args[1]));
-        if (chdir(args[1]) != -1)
+        if (chdir(args[1]) != 0)
           perror("cd");
       }
+      continue;
     } else if (cmpstr(args[0], "exit"))
       break;
+
+    // TODO: variables and substitution
+
+    // craft a system command
+    char *cmd = malloc(LIMIT_BIG * sizeof(char));
+    for (int i = 0, j = 0, k = 0; i < strlen(input); i++, k++)
+      if (args[j][k] == ' ' || args[j][k] == '\x00')
+        j++, k = -1, cmd[i] = ' ';
+      else
+        cmd[i] = args[j][k];
+
+    // TODO: instead of relying on sh to execute commands, do it ourselves
+    system(cmd);
   }
 
   return 0;
