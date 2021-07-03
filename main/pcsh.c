@@ -1,16 +1,6 @@
-#include "../lib/pcsh.h"
-#include <errno.h>
-#include <memory.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "pcsh.h"
 
-#define VERSION "pcsh 0.1.0-alpha"
-
-#define INPUT_LIMIT (8 << 8) // 2048
-#define LIMIT_BIG (8 << 7)   // 1024
-#define LIMIT_SMALL (8 << 4) // 128
+// lets of TODOs :tired_wojack:
 
 int main(int argc, char **argv) {
   // CLI Arguments
@@ -31,13 +21,21 @@ Sharing is caring, no copyright.\n");
 
   // Ignore SIGINT
   signal(SIGINT, SIG_IGN);
+  static struct termios _told, _tnew;
+  tcgetattr(STDIN_FILENO, &_told);
+  _tnew = _told;
+  _tnew.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &_tnew);
+  // tcsetattr(STDIN_FILENO, TCSANOW, &_told);
 
-  char *input = malloc(INPUT_LIMIT * sizeof(char));
+  char *input = malloc((INPUT_LIMIT + 1) * sizeof(char));
+  char *prompt = malloc(LIMIT_SMALL * sizeof(char));
+  int row = 0, col = 0;
 
   // Read the env
-  char *s_username = malloc(LIMIT_SMALL * sizeof(size_t));
-  char *s_hostname = malloc(LIMIT_SMALL * sizeof(size_t));
-  char *s_pwd = malloc(LIMIT_BIG * sizeof(size_t));
+  char *s_username = malloc(LIMIT_SMALL * sizeof(char));
+  char *s_hostname = malloc(LIMIT_SMALL * sizeof(char));
+  char *s_pwd = malloc(LIMIT_BIG * sizeof(char));
   __uid_t s_uid = getuid();
   getlogin_r(s_username, LIMIT_SMALL);
   gethostname(s_hostname, LIMIT_SMALL);
@@ -48,19 +46,62 @@ Sharing is caring, no copyright.\n");
 
   while (1) {
     // TODO: add prompt/theme support
-    // TODO: support for rollback, ctrl+l, etc. (needs to get indiviual chars
-    // instead of deliming at '\n')
     getcwd(s_pwd, LIMIT_BIG);
-    printf("\r%s@%s %s> ", s_username, s_hostname, s_pwd);
-    fgets(input, INPUT_LIMIT, stdin);
+    sprintf(prompt, "\r%s@%s %s> ", s_username, s_hostname, s_pwd);
+    printf("\r%s", prompt);
+
+    // TODO: support for rollback, ctrl+l, etc.
+    // By making this a for loop, we can avoid a buffer overflow because
+    // anything past INPUT_LIMIT doesnt get put into input
+    for (int i = 0; i < INPUT_LIMIT; i++) {
+      getcursorpos(&row, &col);
+      char nextc = fgetc(stdin);
+
+      if (nextc >= '!' && nextc != 127) {
+        input[i] = nextc;
+        putchar(nextc);
+      } else if (nextc == 10) { // return / enter
+        input[i] = '\x00';
+        putchar('\n');
+        break;
+      } else if (nextc == 27 && fgetc(stdin) == 91) { // escape
+        switch (fgetc(stdin)) {
+        case 65: // up
+          // scrollback
+          break;
+        case 66: // down
+          // scrollback
+          break;
+        // TODO: make text insert and not replace
+        // TODO: limit select to only the input, restrict boundaries
+        case 68: // left
+          i--, i--;
+          printf("\e[1D");
+          break;
+        case 67: // right
+          printf("\e[1C");
+          break;
+        }
+      } else if (nextc == ' ') {
+        input[i] = ' ';
+        putchar(' ');
+      } else if (nextc == 127) { // backspace
+        // hacky, i know.
+        if (col <= strlen(prompt) + 1)
+          printf("\e[%luG", strlen(prompt) + 1), i = 1;
+        input[(i--)] = '\x00';
+        printf("\b \b");
+        i--;
+      } else {
+        i--;
+      }
+    }
 
     if (input == NULL)
       continue;
 
-    // 100 args each with 8<<7 (1024) characters
     char **args = malloc((LIMIT_BIG * sizeof(char)) * 100);
-    for (int i = 0; i < 100; i++)
-      args[i] = malloc(LIMIT_BIG * sizeof(char));
+    args[0] = malloc(LIMIT_BIG * sizeof(char));
     int argsc = 0; // args count
 
     // seperate args with delim ' ' and '\x00'
@@ -71,6 +112,7 @@ Sharing is caring, no copyright.\n");
         args[j][i] = '\x00';
         k = -1;
         j++, argsc++;
+        args[j] = malloc(LIMIT_BIG * sizeof(char));
       }
     }
 
@@ -82,6 +124,8 @@ Sharing is caring, no copyright.\n");
           perror("cd");
       }
       continue;
+      // FIXME: when spamming 2048 'a's into the input, typing exit afterwards
+      // resulted in "malloc(): corrupted top size"
     } else if (cmpstr(args[0], "exit"))
       break;
 
@@ -97,7 +141,16 @@ Sharing is caring, no copyright.\n");
 
     // TODO: instead of relying on sh to execute commands, do it ourselves
     system(cmd);
+
+    free(args);
+    free(cmd);
   }
+
+  free(input);
+  free(prompt);
+  free(s_hostname);
+  free(s_username);
+  free(s_pwd);
 
   return 0;
 }
