@@ -6,11 +6,29 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define VERSION "pcsh 0.1.0-alpha"
+
 #define INPUT_LIMIT (8 << 8) // 2048
 #define LIMIT_BIG (8 << 7)   // 1024
 #define LIMIT_SMALL (8 << 4) // 128
 
 int main(int argc, char **argv) {
+  // CLI Arguments
+  for (int i = 0; i < argc; i++) {
+    if (cmpstr(argv[i], "--version")) {
+      printf(VERSION "\n");
+      return 0;
+    } else if (cmpstr(argv[i], "--help")) {
+      printf(VERSION " usage\n\
+\n\
+--help    Shows this help page\n\
+--version Shows the version\n\
+\n\
+Sharing is caring, no copyright.\n");
+      return 0;
+    }
+  }
+
   // Ignore SIGINT
   signal(SIGINT, SIG_IGN);
 
@@ -24,6 +42,9 @@ int main(int argc, char **argv) {
   getlogin_r(s_username, LIMIT_SMALL);
   gethostname(s_hostname, LIMIT_SMALL);
   getcwd(s_pwd, LIMIT_BIG);
+
+  // TODO: change this to the actual path, it shouldnt matter anyway
+  setenv("SHELL", "/usr/bin/pcsh", 1);
 
   while (1) {
     // TODO: add prompt/theme support
