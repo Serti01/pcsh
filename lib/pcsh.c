@@ -1,4 +1,5 @@
 #include "pcsh.h"
+#include <unistd.h>
 
 int cd(char *path) {
   struct stat *buf;
@@ -215,4 +216,33 @@ int getcursorpos(int *const rowptr, int *const colptr) {
 
   /* Done. */
   return retval;
+}
+
+
+int pcshexec(char *cmd) {
+  char  **_argv;
+  int     _argc;
+  _argv = malloc(1024*100); 
+  _argv[0] = malloc(1024);
+
+  if (!cmd)
+    return -1;
+
+  // separate _cmd into arguments
+  for (int i = 0, j = 0, k = 0; i <= strlen(cmd); i++, k++) {
+    if (cmd[i] != ' ' && cmd[i] != 0 && cmd[i] != 10) {
+      _argv[j][k] = cmd[i];
+    } else {
+      _argv[j][k] = 0;
+      k = -1;
+      j++, _argc++;
+      _argv[j] = malloc(1024);
+    }
+  }
+
+  execvp(_argv[0], (char**)_argv);
+
+  free(_argv);
+
+  return 0;
 }

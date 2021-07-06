@@ -12,8 +12,9 @@
 int cd(char *path);
 int cmpstr(char *s1, char *s2);
 int getcursorpos(int *const row, int *const col);
+int pcshexec(char *cmd);
 
-#define VERSION "pcsh 0.2.0-alpha"
+#define VERSION "pcsh 1.0.0-alpha"
 
 // TODO: add config file
 #define SCROLLBACK_LIMIT 128

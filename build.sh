@@ -4,6 +4,17 @@ if ! test -e bin;then
     mkdir bin
 fi
 
+if [ "$1" == "debug" ] || [ "$1" == "debug-run" ]; then
+    gcc -g -fsanitize=address lib/pcsh.c main/pcsh.c -o bin/pcsh_debug
+
+    if [ "$1" == "debug-run" ]; then
+        ./bin/pcsh_debug
+    fi
+    
+    exit
+fi
+
+
 # compile to objects
 gcc -c -fPIC main/pcsh.c            -o bin/pcsh.o
 gcc -c -fPIC lib/pcsh.c             -o bin/lib.o
