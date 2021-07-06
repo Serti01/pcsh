@@ -218,11 +218,10 @@ int getcursorpos(int *const rowptr, int *const colptr) {
   return retval;
 }
 
-
 int pcshexec(char *cmd) {
-  char  **_argv;
-  int     _argc;
-  _argv = malloc(1024*100); 
+  char **_argv;
+  int _argc;
+  _argv = malloc(1024 * 100);
   _argv[0] = malloc(1024);
 
   if (!cmd)
@@ -240,7 +239,15 @@ int pcshexec(char *cmd) {
     }
   }
 
-  execvp(_argv[0], (char**)_argv);
+  if (cmpstr(_argv[0], "cd")) {
+    cd(_argv[1]);
+    return 0;
+  } else if (cmpstr(_argv[0], "exit")) {
+    exit(0);
+    return 0;
+  }
+
+  execvp(_argv[0], _argv);
 
   free(_argv);
 

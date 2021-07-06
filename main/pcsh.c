@@ -106,8 +106,11 @@ int main(int argc, char **argv) {
 
   //restore terminal and execute program
   tcsetattr(STDIN_FILENO, TCSANOW, &_told);
-  pcshexec(input);
-
+#if DEBUG
+pcshexec(input);
+#else
+system(input);
+#endif
   return 0;
 }
 
