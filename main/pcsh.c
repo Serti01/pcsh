@@ -1,7 +1,4 @@
 #include "pcsh.h"
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #define ARGHELP printf(VERSION " usage\n\
 \n\
@@ -20,6 +17,7 @@ the parent forks children that prompt for a command and exec it
 
 void _beforexit() {
   unlink("/tmp/pcsh.pid");
+  exit(0);
 }
 
 int main(int argc, char **argv) {
@@ -29,6 +27,7 @@ int main(int argc, char **argv) {
   if (st.st_size > 12) {
     // CLI Arguments
     for (int i = 0; i < argc; i++) {
+      // FIXME: neofetch report 0.2.0-alpha /shrug
       if (cmpstr(argv[i], "--version")) {
         printf(VERSION);
         return 0;
@@ -46,6 +45,8 @@ int main(int argc, char **argv) {
     free(pids);
 
     atexit(_beforexit);
+    signal(SIGINT, _beforexit);
+    setenv("SHELL", "/usr/bin/pcsh", 1);
 
     while (1) {
       pid_t pid = fork();
@@ -137,7 +138,6 @@ int main(int argc, char **argv) {
 //   getcwd(s_pwd, LIMIT_BIG);
 
 //   // TODO: change this to the actual path, it shouldnt matter anyway
-//   setenv("SHELL", "/usr/bin/pcsh", 1);
 
 //   while (1) {
 //     // TODO: add prompt/theme support
